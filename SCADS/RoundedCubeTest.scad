@@ -1,6 +1,8 @@
 include <MyLib.scad>
 include <box.scad>
 
+$fn = $preview ? 0 : 24;
+
 /* [Show Box Parts] */
 bx_show_box = true;
 bx_show_lid = true;

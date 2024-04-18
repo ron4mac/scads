@@ -81,10 +81,6 @@ module roundedBox (width=bx_width, depth=bx_depth, height=bx_height, thick=bx_th
 		// interior of box
 		translate([thick,thick,thick]) roundedInterior(width-thick*2,depth-thick*2,height-lid+6,max(wallrad-thick,1),max(botrad-thick,1));
 		if (lidtype==slide_type) translate([thick/2,thick/2,height-thick]) slideShape(width-thick/2+.01,depth-thick,thick+.01,false);
-
-	//	if (lidtype==snap_type) {
-	//		translate([thick/2,thick/2,height-lid-gap-5]) allRoundedCube(width-thick,depth-thick,5,wallrad-thick/2,0);
-	//	}
 	}
 	if ((lid || lidtype==slide_type) && bx_show_lid) placeLid(height) roundedBoxLid(width,depth,height,thick,wallrad,botrad,toprad,lid,lidtype,gap);
 }
@@ -113,10 +109,8 @@ module roundedBoxLid (w, d, h, t, r, br, tr, l, p, g=0)
 	if (g) translate([0,0,h-l-g]) allRoundedCube(w,d,g,r,0,0,true);
 	if (p==peg_type) {
 		// peg risers if necessary
-	//	if (l && l>t) placeRisers(w,d,h,t,r,l) rndRiser(g?r:r-t,l-t);
 		if (l && l>t) placeRisers(w,d,h,t,t,l) sqrRiser(_pegT+pclr,l-t);
 		// lid pegs
-	//	translate([t+pclr,t+pclr,h-t-l-g-1]) allRoundedCube(w-t*2-pclr*2,d-t*2-pclr*2,t+1,r-t-pclr,0,0,true);
 		pgr = max(r-t-pclr, .5);
 		color("Coral") placePegs(w,d,h,t,t,l) //#cube([2,2,_pegH]);	//scube(w-t*2-pclr*2,d-t*2-pclr*2,t-pclr,p);
 			linear_extrude(_pegH) translate([pclr,pclr]) hull() {
@@ -154,8 +148,6 @@ module roundedInterior (width, depth, height, rad, bot, top)
 			}
 		}
 	}
-
-	//allRoundedCube(width,depth,height,rad-thick,bot);
 }
 
 module placeSnaps (w, d, t=0, h=0)
@@ -166,7 +158,6 @@ module placeSnaps (w, d, t=0, h=0)
 
 	if (t) {
 		// add snap nubs
-		//sh = height-lid-gap+3;
 		sl = sw-4;;
 		sr = sd/2;	//.9;
 		if (w>d) {
