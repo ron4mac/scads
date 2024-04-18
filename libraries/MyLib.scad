@@ -1,1 +1,1 @@
-/Users/rcrans/Documents/OpenSCAD/libraries/MyLib.scad
+$fn = $preview ? 12 : 60;
