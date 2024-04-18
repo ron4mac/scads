@@ -79,8 +79,6 @@ module roundedBox (width=bx_width, depth=bx_depth, height=bx_height, thick=bx_th
 			}
 		}
 		// interior of box
-//		translate([thick,thick,thick]) allRoundedCube(width-thick*2,depth-thick*2,height/*-thick-lid-gap+.01*/,wallrad-thick,botrad);
-
 		translate([thick,thick,thick]) roundedInterior(width-thick*2,depth-thick*2,height-lid+6,max(wallrad-thick,1),max(botrad-thick,1));
 		if (lidtype==slide_type) translate([thick/2,thick/2,height-thick]) slideShape(width-thick/2+.01,depth-thick,thick+.01,false);
 
@@ -162,8 +160,9 @@ module roundedInterior (width, depth, height, rad, bot, top)
 
 module placeSnaps (w, d, t=0, h=0)
 {
-	sw = 10;	// snap width
-	sd = 1.8;	// snap nub diameter
+	sw = 10;		// snap width
+	sd = 1.8;		// snap nub diameter
+	colr = "White";	// snap nub color
 
 	if (t) {
 		// add snap nubs
@@ -174,14 +173,14 @@ module placeSnaps (w, d, t=0, h=0)
 			_w = w/2;
 			d1 = t/2+pclr*2;
 			d2 = d-t/2-pclr*2;
-			color("Coral") translate([_w,d1,h]) rotate([0,90]) cylinder(sl,sr,sr,true);
-			color("Coral") translate([_w,d2,h]) rotate([0,90]) cylinder(sl,sr,sr,true);
+			color(colr) translate([_w,d1,h]) rotate([0,90]) cylinder(sl,sr,sr,true);
+			color(colr) translate([_w,d2,h]) rotate([0,90]) cylinder(sl,sr,sr,true);
 		} else {
 			w1 = t/2+pclr*2;
 			w2 = w-t/2-pclr*2;
 			_d = d/2;
-			color("Coral") translate([w1,_d,h]) rotate([90,0]) cylinder(sl,sr,sr,true);
-			color("Coral") translate([w2,_d,h]) rotate([90,0]) cylinder(sl,sr,sr,true);
+			color(colr) translate([w1,_d,h]) rotate([90,0]) cylinder(sl,sr,sr,true);
+			color(colr) translate([w2,_d,h]) rotate([90,0]) cylinder(sl,sr,sr,true);
 		}
 	} else {
 		// subtract snap receptor
