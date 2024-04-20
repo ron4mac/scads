@@ -30,38 +30,11 @@ bx_show_box = true;
 bx_show_lid = true;
 
 // internal constants
-pclr = .16;	// parts clearance
-_pegH = 3;	// lid peg height
-_pegT = 4;	// lid peh thickness
+bx_clr = .16;	// parts clearance
+bx_pegH = 3;	// lid peg height
+bx_pegT = 4;	// lid peg thickness
 
-module xx_box (width, depth, height, thick, lid=0, lidtype=bx_type, gap=0)
-{
-	difference() {
-		th2 = thick*2;
-		cube([width,depth,height-lid-gap]);
-		translate([thick,thick,thick])
-			cube([width-th2,depth-th2,height-thick-lid-gap+.01]);
-	}
-	if (lid) placeLid(height) boxLid(width,depth,height,thick,lid,lidtype,gap);
-}
-
-module xx_boxLid (w, d, h, t, l, p, g)
-{
-	translate([0,0,h-l]) difference() {
-		th2 = t*2;
-		cube([w,d,l]);
-		if (l>t) translate([t,t,-.01])
-			cube([w-th2,d-th2,l-t+.01]);
-	}
-	// gap between lid and box
-	if (g) translate([0,0,h-l-g]) scube(w,d,t*2,g);
-	// peg risers if necessary
-	if (l && l>t) placeRisers(w,d,h,t,t,l) sqrRiser(t,l-t);
-	// lid pegs
-	translate([t+pclr,t+pclr,h-l-p-g]) scube(w-t*2-pclr*2,d-t*2-pclr*2,t-pclr,p);
-}
-
-module roundedBox (width=bx_width, depth=bx_depth, height=bx_height, thick=bx_thick, wallrad=bx_radius, botrad=bx_radius, toprad=bx_radius, lid=bx_lid_height, lidtype=bx_type, gap=0)
+module Bx_Generate (width=bx_width, depth=bx_depth, height=bx_height, thick=bx_thick, wallrad=bx_radius, botrad=bx_radius, toprad=bx_radius, lid=bx_lid_height, lidtype=bx_type, gap=0)
 {
 	assert(wallrad==0 || lidtype!=slide_type, "Box must have zero radius for a slide-on lid");
 	assert(lid==0 || lidtype!=slide_type, "Box must have zero lid height for a slide-on lid");
@@ -72,7 +45,7 @@ module roundedBox (width=bx_width, depth=bx_depth, height=bx_height, thick=bx_th
 			color(colr) allRoundedCube(width,depth,height-lid-gap,wallrad,botrad);
 			if (lidtype==snap_type || lidtype==cover_type) {
 				assert(lid >= thick+5, str("The lid height must be at least ", thick+5));
-				color(colr) translate([thick/2+pclr,thick/2+pclr,height-lid-gap/*-.2*/]) allRoundedCube(width-thick-pclr*2,depth-thick-pclr*2,4.8,wallrad-thick/2,0);
+				color(colr) translate([thick/2+bx_clr,thick/2+bx_clr,height-lid-gap/*-.2*/]) allRoundedCube(width-thick-bx_clr*2,depth-thick-bx_clr*2,4.8,wallrad-thick/2,0);
 				if (lidtype==snap_type) {
 					placeSnaps(width, depth, thick, height-lid-gap+3);
 				}
@@ -81,6 +54,7 @@ module roundedBox (width=bx_width, depth=bx_depth, height=bx_height, thick=bx_th
 		// interior of box
 		translate([thick,thick,thick]) roundedInterior(width-thick*2,depth-thick*2,height-lid+6,max(wallrad-thick,1),max(botrad-thick,1));
 		if (lidtype==slide_type) translate([thick/2,thick/2,height-thick]) slideShape(width-thick/2+.01,depth-thick,thick+.01,false);
+		children();
 	}
 	if ((lid || lidtype==slide_type) && bx_show_lid) placeLid(height) roundedBoxLid(width,depth,height,thick,wallrad,botrad,toprad,lid,lidtype,gap);
 }
@@ -88,7 +62,7 @@ module roundedBox (width=bx_width, depth=bx_depth, height=bx_height, thick=bx_th
 module roundedBoxLid (w, d, h, t, r, br, tr, l, p, g=0)
 {
 	if (p==slide_type) {
-		translate([t/2+pclr,t/2+pclr,h-l]) slideShape(w-t/2-pclr,d-t-pclr*2,t);
+		translate([t/2+bx_clr,t/2+bx_clr,h-l]) slideShape(w-t/2-bx_clr,d-t-bx_clr*2,t);
 	} else {
 	// top of lid
 	translate([0,0,h-l]) difference() {
@@ -109,13 +83,13 @@ module roundedBoxLid (w, d, h, t, r, br, tr, l, p, g=0)
 	if (g) translate([0,0,h-l-g]) allRoundedCube(w,d,g,r,0,0,true);
 	if (p==peg_type) {
 		// peg risers if necessary
-		if (l && l>t) placeRisers(w,d,h,t,t,l) sqrRiser(_pegT+pclr,l-t);
+		if (l && l>t) placeRisers(w,d,h,t,t,l) sqrRiser(bx_pegT+bx_clr,l-t);
 		// lid pegs
-		pgr = max(r-t-pclr, .5);
-		color("Coral") placePegs(w,d,h,t,t,l) //#cube([2,2,_pegH]);	//scube(w-t*2-pclr*2,d-t*2-pclr*2,t-pclr,p);
-			linear_extrude(_pegH) translate([pclr,pclr]) hull() {
+		pgr = max(r-t-bx_clr, .5);
+		color("Coral") placePegs(w,d,h,t,t,l) //#cube([2,2,bx_pegH]);	//scube(w-t*2-bx_clr*2,d-t*2-bx_clr*2,t-bx_clr,p);
+			linear_extrude(bx_pegH) translate([bx_clr,bx_clr]) hull() {
 				translate([pgr,pgr]) circle(pgr);
-				polygon([[0,_pegT],[_pegT,_pegT],[_pegT,0]]);
+				polygon([[0,bx_pegT],[bx_pegT,bx_pegT],[bx_pegT,0]]);
 			};
 	}
 }
@@ -162,13 +136,13 @@ module placeSnaps (w, d, t=0, h=0)
 		sr = sd/2;	//.9;
 		if (w>d) {
 			_w = w/2;
-			d1 = t/2+pclr*2;
-			d2 = d-t/2-pclr*2;
+			d1 = t/2+bx_clr*2;
+			d2 = d-t/2-bx_clr*2;
 			color(colr) translate([_w,d1,h]) rotate([0,90]) cylinder(sl,sr,sr,true);
 			color(colr) translate([_w,d2,h]) rotate([0,90]) cylinder(sl,sr,sr,true);
 		} else {
-			w1 = t/2+pclr*2;
-			w2 = w-t/2-pclr*2;
+			w1 = t/2+bx_clr*2;
+			w2 = w-t/2-bx_clr*2;
 			_d = d/2;
 			color(colr) translate([w1,_d,h]) rotate([90,0]) cylinder(sl,sr,sr,true);
 			color(colr) translate([w2,_d,h]) rotate([90,0]) cylinder(sl,sr,sr,true);
@@ -219,19 +193,6 @@ module sqrRiser (rzd, rzh)
 	}
 }
 
-module xx_rndRiser (rzr, rzh)
-{
-	hull() {
-		cylinder(.01,rzr,rzr);
-		if (rzh > rzr*2) {
-			zo = sqrt(rzr^2*2)/2-.1;	//min(rzr/1.3,1);
-			translate([-zo,-zo,rzh]) cylinder(.01,.01,.01);
-		} else {
-			translate([0,0,rzh]) cylinder(.01,rzr,rzr);
-		}
-	}
-}
-
 module placeRisers (w, d, h, t, r, l)
 {
 	rz = h-l;
@@ -243,7 +204,7 @@ module placeRisers (w, d, h, t, r, l)
 
 module placePegs (w, d, h, t, r, l)
 {
-	rz = h-l-_pegH;
+	rz = h-l-bx_pegH;
 	translate([r,r,rz]) children();
 	translate([r,d-r,rz]) rotate([0,0,270]) children();
 	translate([w-r,d-r,rz]) rotate([0,0,180]) children();
@@ -263,3 +224,24 @@ module placeLid (h)
 	}
 }
 
+// ==================================== actions to cutout shapes from sides
+module Bx_Cut_Left (deep=0)
+{
+	y = deep ? deep : bx_thick+.01;
+	translate([0,y,0]) rotate([90,0,0]) linear_extrude(bx_thick+.02) children();
+}
+module Bx_Cut_Right (deep=0)
+{
+	y = deep ? deep : bx_thick+.01;
+	translate([bx_width,bx_depth-y,0]) rotate([90,0,180]) linear_extrude(bx_thick+.02) children();
+}
+module Bx_Cut_Back (deep=0)
+{
+	x = deep ? deep : bx_thick+.01;
+	translate([x,bx_depth,0]) rotate([90,0,-90]) linear_extrude(bx_thick+.02) children();
+}
+module Bx_Cut_Front (deep=0)
+{
+	x = deep ? deep : bx_thick+.01;
+	translate([bx_width-x,0,0]) rotate([90,0,90]) linear_extrude(bx_thick+.02) children();
+}
