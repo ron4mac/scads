@@ -1,104 +1,125 @@
 use <rounded.scad>
 
 
-// lid types
-cover_type = 0;
-snap_type = 1;
-slide_type = 2;
-peg_type = 3;
-
 // box dimensions
-bx_width = 80;
-bx_depth = 60;
-bx_height = 30;
-bx_thick = 2.4;
-bx_lid_height = 8;
+bxv_width = 80;
+bxv_depth = 60;
+bxv_height = 30;
+bxv_thick = 2.4;
+bxv_lid_height = 8;
 
 // the type of box to generate
-bx_type = cover_type;
+bxv_type = bxc_type_cover;
 // box exterior edge radius
-bx_radius = 3;
+bxv_radius = 3;
 
 // box rows and columns
-bx_cols = 1;
-bx_rows = 1;
-bx_no_col_wall = [];
-bx_no_row_wall = [];
+bxv_cols = 1;
+bxv_rows = 1;
+bxv_no_col_wall = [];
+bxv_no_row_wall = [];
 
 // show box parts
-bx_show_box = true;
-bx_show_lid = true;
+bxv_show_box = true;
+bxv_show_lid = true;
 
 // internal constants
-bx_clr = .16;	// parts clearance
-bx_pegH = 3;	// lid peg height
-bx_pegT = 4;	// lid peg thickness
+bxc_clr = .16;	// parts clearance
+bxc_pegH = 3;	// lid peg height
+bxc_pegT = 4;	// lid peg thickness
+bxc_bxColor = "BurlyWood";
+bxc_pegColor = "Coral";
+// lid cover/snap area
+bxc_ridgeH = 5;		// ridge space height
+bxc_snapVert = 2;	// lid snap vertical position
+bxc_snapColor = "White";
+// lid types
+bxc_type_cover = 0;
+bxc_type_snap = 1;
+bxc_type_slide = 2;
+bxc_type_peg = 3;
 
-module Bx_Generate (width=bx_width, depth=bx_depth, height=bx_height, thick=bx_thick, wallrad=bx_radius, botrad=bx_radius, toprad=bx_radius, lid=bx_lid_height, lidtype=bx_type, gap=0)
+
+module bx_generate (width=bxv_width, depth=bxv_depth, height=bxv_height, thick=bxv_thick, wallrad=bxv_radius, botrad=bxv_radius, toprad=bxv_radius, lid=bxv_lid_height, lidtype=bxv_type, gap=0)
 {
-	assert(wallrad==0 || lidtype!=slide_type, "Box must have zero radius for a slide-on lid");
-	assert(lid==0 || lidtype!=slide_type, "Box must have zero lid height for a slide-on lid");
+	assert(wallrad==0 || lidtype!=bxc_type_slide, "Box must have zero radius for a slide-on lid");
+	assert(lid==0 || lidtype!=bxc_type_slide, "Box must have zero lid height for a slide-on lid");
 
-	colr = "BurlyWood";
-	if (bx_show_box) difference() {
+	if (bxv_show_box) difference() {
 		union() {
-			color(colr) allRoundedCube(width,depth,height-lid-gap,wallrad,botrad);
-			if (lidtype==snap_type || lidtype==cover_type) {
-				assert(lid >= thick+5, str("The lid height must be at least ", thick+5));
-				color(colr) translate([thick/2+bx_clr,thick/2+bx_clr,height-lid-gap/*-.2*/]) allRoundedCube(width-thick-bx_clr*2,depth-thick-bx_clr*2,4.8,wallrad-thick/2,0);
-				if (lidtype==snap_type) {
-					placeSnaps(width, depth, thick, height-lid-gap+3);
-				}
+			bx_box(width,depth,height-lid-gap,thick,wallrad,botrad,lid,lidtype,gap);
+			if (lidtype==bxc_type_snap) {
+				bx_placeSnaps(width, depth, thick, height-lid-gap+bxc_snapVert);
+			}
+			bx_hook_boxAdds();
+		}
+		bx_hook_boxCuts();
+	}
+	if ((lid || lidtype==bxc_type_slide) && bxv_show_lid) bx_placeLid(height) bx_lid(width,depth,height,thick,wallrad,botrad,toprad,lid,lidtype,gap);
+}
+
+// hollowed out box shell
+module bx_box (w, d, h, t, r, br, l, p, g=0)
+{
+	difference() {
+		union() {
+			color(bxc_bxColor) allRoundedCube(w,d,h,r,br);
+			if (p==bxc_type_snap || p==bxc_type_cover) {
+				assert(l >= t+bxc_ridgeH, str("The lid height must be at least ", t+bxc_ridgeH));
+				color(bxc_bxColor) translate([t/2+bxc_clr,t/2+bxc_clr,h-.1]) allRoundedCube(w-t-bxc_clr*2,d-t-bxc_clr*2,bxc_ridgeH-.2,max(r-t/2,1),0);
 			}
 		}
 		// interior of box
-		translate([thick,thick,thick]) roundedInterior(width-thick*2,depth-thick*2,height-lid+6,max(wallrad-thick,1),max(botrad-thick,1));
-		if (lidtype==slide_type) translate([thick/2,thick/2,height-thick]) slideShape(width-thick/2+.01,depth-thick,thick+.01,false);
-		children();
+		translate([t,t,t]) bx_interior(w-t*2,d-t*2,h-l+16,max(r-t,1),max(br-t,1));
+		if (p==bxc_type_slide) translate([t/2,t/2,h-t]) bx_slideShape(w-t/2+.01,d-t,t+.01,false);
 	}
-	if ((lid || lidtype==slide_type) && bx_show_lid) placeLid(height) roundedBoxLid(width,depth,height,thick,wallrad,botrad,toprad,lid,lidtype,gap);
 }
 
-module roundedBoxLid (w, d, h, t, r, br, tr, l, p, g=0)
+module bx_lid (w, d, h, t, r, br, tr, l, p, g=0)
 {
-	if (p==slide_type) {
-		translate([t/2+bx_clr,t/2+bx_clr,h-l]) slideShape(w-t/2-bx_clr,d-t-bx_clr*2,t);
+	if (p==bxc_type_slide) {
+		translate([t/2+bxc_clr,t/2+bxc_clr,h-l]) bx_slideShape(w-t/2-bxc_clr,d-t-bxc_clr*2,t);
 	} else {
 	// top of lid
-	translate([0,0,h-l]) difference() {
-		th2 = t*2;
-		allRoundedCube(w,d,l,r,0,tr);
-		if (l>t) translate([t,t,-.01])
-			roundedInterior(w-th2,d-th2,l-t+.01,max(r-t,1),0,0);	//#allRoundedCube(w-th2,d-th2,l-t,r-t,br-t,tr-t);
-		if (p==snap_type || p==cover_type) {
-			translate([t/2,t/2,-.01]) allRoundedCube(w-t,d-t,5.01,r-t/2,0);
-			if (p==snap_type) {
-				placeSnaps(w,d);
+	translate([0,0,h-l])
+		difference() {
+			th2 = t*2;
+			union() {
+				allRoundedCube(w,d,l,r,0,tr);
+				bx_hook_lidAdds();
 			}
+			if (l>t) translate([t,t,-.01])
+				bx_interior(w-th2,d-th2,l-t+.01,max(r-t,1),0,0);	//#allRoundedCube(w-th2,d-th2,l-t,r-t,br-t,tr-t);
+			if (p==bxc_type_snap || p==bxc_type_cover) {
+				translate([t/2,t/2,-.01]) allRoundedCube(w-t,d-t,bxc_ridgeH+.01,r-t/2,0);
+				if (p==bxc_type_snap) {
+					bx_placeSnaps(w,d);
+				}
+			}
+			bx_hook_lidCuts();
 		}
-	}
 	}
 
 	// gap between lid and box
 	if (g) translate([0,0,h-l-g]) allRoundedCube(w,d,g,r,0,0,true);
-	if (p==peg_type) {
+	if (p==bxc_type_peg) {
 		// peg risers if necessary
-		if (l && l>t) placeRisers(w,d,h,t,t,l) sqrRiser(bx_pegT+bx_clr,l-t);
+		if (l && l>t) bx_placeRisers(w,d,h,t,t,l) bx_sqrRiser(bxc_pegT+bxc_clr,l-t);
 		// lid pegs
-		pgr = max(r-t-bx_clr, .5);
-		color("Coral") placePegs(w,d,h,t,t,l) //#cube([2,2,bx_pegH]);	//scube(w-t*2-bx_clr*2,d-t*2-bx_clr*2,t-bx_clr,p);
-			linear_extrude(bx_pegH) translate([bx_clr,bx_clr]) hull() {
+		pgr = max(r-t-bxc_clr, .5);
+		color(bxc_pegColor) bx_placePegs(w,d,h,t,t,l) //#cube([2,2,bxc_pegH]);	//scube(w-t*2-bxc_clr*2,d-t*2-bxc_clr*2,t-bxc_clr,p);
+			linear_extrude(bxc_pegH) translate([bxc_clr,bxc_clr]) hull() {
 				translate([pgr,pgr]) circle(pgr);
-				polygon([[0,bx_pegT],[bx_pegT,bx_pegT],[bx_pegT,0]]);
+				polygon([[0,bxc_pegT],[bxc_pegT,bxc_pegT],[bxc_pegT,0]]);
 			};
 	}
 }
 
-module roundedInterior (width, depth, height, rad, bot, top)
+module bx_interior (width, depth, height, rad, bot, top)
 {
 	st = 1.2;	// internal wall thickness
-	nx = max(1,bx_cols);
-	ny = max(1,bx_rows);
+	nx = max(1,bxv_cols);
+	ny = max(1,bxv_rows);
 	dx = (width-(nx-1)*st)/nx;
 	ox = dx+st;
 	dy = (depth-(ny-1)*st)/ny;
@@ -109,12 +130,12 @@ module roundedInterior (width, depth, height, rad, bot, top)
 			translate([ox*cx,oy*cy]) allRoundedCube(dx,dy,height,rad,bot,bot);
 			// extend for any excluded walls
 			translate([ox*cx,oy*cy]) union() {
-				if (cx<nx-1) for (ix = bx_no_row_wall) {
+				if (cx<nx-1) for (ix = bxv_no_row_wall) {
 					if (cx==ix[0] && cy==ix[1]) {
 						allRoundedCube(dx*2,dy,height,rad,bot,bot);
 					}
 				}
-				if (cy<ny-1) for (ix = bx_no_col_wall) {
+				if (cy<ny-1) for (ix = bxv_no_col_wall) {
 					if (cx==ix[0] && cy==ix[1]) {
 						allRoundedCube(dx,dy*2,height,rad,bot,bot);
 					}
@@ -124,32 +145,42 @@ module roundedInterior (width, depth, height, rad, bot, top)
 	}
 }
 
-module placeSnaps (w, d, t=0, h=0)
+module bx_snapNub (l,r)
+{
+	difference() {
+		union() {
+			cylinder(l/2,r,r/2);
+			translate([0,0,-l/2]) cylinder(l/2,r/2,r);
+		}
+		translate([0,r,0]) cube([r*2,r*2,l+.1],true);
+	}
+}
+
+module bx_placeSnaps (w, d, t=0, h=0)
 {
 	sw = 10;		// snap width
 	sd = 1.8;		// snap nub diameter
-	colr = "White";	// snap nub color
 
 	if (t) {
 		// add snap nubs
-		sl = sw-4;;
-		sr = sd/2;	//.9;
+		sl = sw-2;;
+		sr = sd/2;
 		if (w>d) {
 			_w = w/2;
-			d1 = t/2+bx_clr*2;
-			d2 = d-t/2-bx_clr*2;
-			color(colr) translate([_w,d1,h]) rotate([0,90]) cylinder(sl,sr,sr,true);
-			color(colr) translate([_w,d2,h]) rotate([0,90]) cylinder(sl,sr,sr,true);
+			d1 = t/2+bxc_clr*2;
+			d2 = d-t/2-bxc_clr*2;
+			color(bxc_snapColor) translate([_w,d1,h]) rotate([0,90]) bx_snapNub(sl,sr);
+			color(bxc_snapColor) translate([_w,d2,h]) rotate([0,90,180]) bx_snapNub(sl,sr);
 		} else {
-			w1 = t/2+bx_clr*2;
-			w2 = w-t/2-bx_clr*2;
+			w1 = t/2+bxc_clr*2;
+			w2 = w-t/2-bxc_clr*2;
 			_d = d/2;
-			color(colr) translate([w1,_d,h]) rotate([90,0]) cylinder(sl,sr,sr,true);
-			color(colr) translate([w2,_d,h]) rotate([90,0]) cylinder(sl,sr,sr,true);
+			color(bxc_snapColor) translate([w1,_d,h]) rotate([90,90]) bx_snapNub(sl,sr);
+			color(bxc_snapColor) translate([w2,_d,h]) rotate([90,270]) bx_snapNub(sl,sr);
 		}
 	} else {
 		// subtract snap receptor
-		sh = 3;
+		sh = bxc_snapVert;
 		if (w>d) {
 			_w = w/2;
 			d1 = sd-.2;
@@ -168,7 +199,7 @@ module placeSnaps (w, d, t=0, h=0)
 	}
 }
 
-module slideShape (w, d, h, thm=true)
+module bx_slideShape (w, d, h, thm=true)
 {
 	h2 = h/2;
 	difference() {
@@ -181,7 +212,7 @@ module slideShape (w, d, h, thm=true)
 	}
 }
 
-module sqrRiser (rzd, rzh)
+module bx_sqrRiser (rzd, rzh)
 {
 	hull() {
 		cube([rzd,rzd,.01]);
@@ -193,7 +224,7 @@ module sqrRiser (rzd, rzh)
 	}
 }
 
-module placeRisers (w, d, h, t, r, l)
+module bx_placeRisers (w, d, h, t, r, l)
 {
 	rz = h-l;
 	translate([r,r,rz]) children();
@@ -202,46 +233,91 @@ module placeRisers (w, d, h, t, r, l)
 	translate([w-r,r,rz]) rotate([0,0,90]) children();
 }
 
-module placePegs (w, d, h, t, r, l)
+module bx_placePegs (w, d, h, t, r, l)
 {
-	rz = h-l-bx_pegH;
+	rz = h-l-bxc_pegH;
 	translate([r,r,rz]) children();
 	translate([r,d-r,rz]) rotate([0,0,270]) children();
 	translate([w-r,d-r,rz]) rotate([0,0,180]) children();
 	translate([w-r,r,rz]) rotate([0,0,90]) children();
 }
 
-module placeLid (h)
+module bx_placeLid (h)
 {
-	if (is_undef(bx_lid_on_box) || !bx_lid_on_box) {
-		if (bx_type==slide_type) {
-			translate([0,-bx_depth-5,-h]) children();
+	if (is_undef(bxv_lid_on_box) || !bxv_lid_on_box) {
+		if (bxv_type==bxc_type_slide) {
+			translate([0,-bxv_depth-5,-h]) children();
 		} else {
 			rotate([180,0,0]) translate([0,5,-h]) children();
 		}
 	} else {
-		translate([0,0,bx_type==slide_type?-bx_thick+.01:0]) children();
+		translate([0,0,bxv_type==bxc_type_slide?-bxv_thick+.01:0]) children();
 	}
 }
 
-// ==================================== actions to cutout shapes from sides
-module Bx_Cut_Left (deep=0)
+
+// ==================================== hooks for cutouts and additions
+module bx_hook_boxCuts ()
 {
-	y = deep ? deep : bx_thick+.01;
-	translate([0,y,0]) rotate([90,0,0]) linear_extrude(bx_thick+.02) children();
 }
-module Bx_Cut_Right (deep=0)
+module bx_hook_boxAdds ()
 {
-	y = deep ? deep : bx_thick+.01;
-	translate([bx_width,bx_depth-y,0]) rotate([90,0,180]) linear_extrude(bx_thick+.02) children();
 }
-module Bx_Cut_Back (deep=0)
+module bx_hook_lidCuts ()
 {
-	x = deep ? deep : bx_thick+.01;
-	translate([x,bx_depth,0]) rotate([90,0,-90]) linear_extrude(bx_thick+.02) children();
 }
-module Bx_Cut_Front (deep=0)
+module bx_hook_lidAdds ()
 {
-	x = deep ? deep : bx_thick+.01;
-	translate([bx_width-x,0,0]) rotate([90,0,90]) linear_extrude(bx_thick+.02) children();
 }
+
+// ==================================== actions to cutout simple shapes from sides and top
+module bx_cutLeft (deep=0)
+{
+	y = deep ? deep : bxv_thick+.01;
+	translate([0,y,0]) rotate([90,0,0]) linear_extrude(bxv_thick+.02) children();
+}
+module bx_cutRight (deep=0)
+{
+	y = deep ? deep : bxv_thick+.01;
+	translate([bxv_width,bxv_depth-y,0]) rotate([90,0,180]) linear_extrude(bxv_thick+.02) children();
+}
+module bx_cutBack (deep=0)
+{
+	x = deep ? deep : bxv_thick+.01;
+	translate([x,bxv_depth,0]) rotate([90,0,-90]) linear_extrude(bxv_thick+.02) children();
+}
+module bx_cutFront (deep=0)
+{
+	x = deep ? deep : bxv_thick+.01;
+	translate([bxv_width-x,0,0]) rotate([90,0,90]) linear_extrude(bxv_thick+.02) children();
+}
+module bx_cutTop (deep=0)
+{
+	y = deep ? deep : bxv_thick+.01;
+	translate([0,0,bxv_lid_height-y]) linear_extrude(y) children();
+}
+
+// ==================================== actions to add simple shapes to sides
+module bx_addLeft (thk=1, offs=0)
+{
+	y = offs ? offs : 0;
+	translate([0,y,0]) rotate([90,0,0]) linear_extrude(thk) children();
+}
+module bx_addRight (offs=0)
+{
+	y = offs ? offs : bxv_thick+.01;
+	translate([bxv_width,bxv_depth-y,0]) rotate([90,0,180]) linear_extrude(bxv_thick+.02) children();
+}
+module bx_addBack (offs=0)
+{
+	x = offs ? offs : bxv_thick+.01;
+	translate([x,bxv_depth,0]) rotate([90,0,-90]) linear_extrude(bxv_thick+.02) children();
+}
+module bx_addFront (offs=0)
+{
+	x = offs ? offs : bxv_thick+.01;
+	translate([bxv_width-x,0,0]) rotate([90,0,90]) linear_extrude(bxv_thick+.02) children();
+}
+
+
+
