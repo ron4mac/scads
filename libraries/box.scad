@@ -1,5 +1,5 @@
+use <utils.scad>
 use <rounded.scad>
-
 
 // box dimensions
 bxv_width = 80;
@@ -148,10 +148,7 @@ module bx_interior (width, depth, height, rad, bot, top)
 module bx_snapNub (l,r)
 {
 	difference() {
-		union() {
-			cylinder(l/2,r,r/2);
-			translate([0,0,-l/2]) cylinder(l/2,r/2,r);
-		}
+		utl_mirror([0,0,1]) cylinder(l/2,r,r/2);
 		translate([0,r,0]) cube([r*2,r*2,l+.1],true);
 	}
 }
@@ -227,19 +224,13 @@ module bx_sqrRiser (rzd, rzh)
 module bx_placeRisers (w, d, h, t, r, l)
 {
 	rz = h-l;
-	translate([r,r,rz]) children();
-	translate([r,d-r,rz]) rotate([0,0,270]) children();
-	translate([w-r,d-r,rz]) rotate([0,0,180]) children();
-	translate([w-r,r,rz]) rotate([0,0,90]) children();
+	utl_distr4(w,d,r,r,r,rz,true) children();
 }
 
 module bx_placePegs (w, d, h, t, r, l)
 {
 	rz = h-l-bxc_pegH;
-	translate([r,r,rz]) children();
-	translate([r,d-r,rz]) rotate([0,0,270]) children();
-	translate([w-r,d-r,rz]) rotate([0,0,180]) children();
-	translate([w-r,r,rz]) rotate([0,0,90]) children();
+	utl_distr4(w,d,r,r,r,rz,true) children();
 }
 
 module bx_placeLid (h)
