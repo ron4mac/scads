@@ -224,13 +224,13 @@ module bx_sqrRiser (rzd, rzh)
 module bx_placeRisers (w, d, h, t, r, l)
 {
 	rz = h-l;
-	utl_distr4(w,d,r,r,r,rz,true) children();
+	utl_distRectangle(w,d,r,r,r,rz,true) children();
 }
 
 module bx_placePegs (w, d, h, t, r, l)
 {
 	rz = h-l-bxc_pegH;
-	utl_distr4(w,d,r,r,r,rz,true) children();
+	utl_distv(w,d,r,r,r,rz,true) children();
 }
 
 module bx_placeLid (h)

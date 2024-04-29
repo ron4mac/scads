@@ -9,19 +9,19 @@ module rrect (w, d, r)
 // rectangular circle group
 module crect (w, d, r)
 {
-	utl_distr4(w,d,r,r,r) circle(r);
+	utl_distRectangle(w,d,r,r,r) circle(r);
 }
 
 // an open "cube" made of cylinder corners
 module ccube (w, d, r, h)
 {
-	utl_distr4(w,d,r,r,r) cylinder(h,r,r);
+	utl_distRectangle(w,d,r,r,r) cylinder(h,r,r);
 }
 
 // an open "cube" made of cube corners
 module scube (w, d, r, h)
 {
-	utl_distr4(w,d,r) cube([r,r,h]);
+	utl_distRectangle(w,d,r) cube([r,r,h]);
 }
 
 // create a cube rounded on its vertical corners
@@ -33,7 +33,7 @@ module roundedCube (width, depth, height, radius)
 module sphereRaft (w, d, r, bot=false)
 {
 	translate([0,0,bot?r:0]) difference() {
-		hull() utl_distr4(w,d,r,r,r) sphere(r);
+		hull() utl_distRectangle(w,d,r,r,r) sphere(r);
 		translate([w/2,d/2,bot?r/2:-r/2]) cube([w,d,r], true);
 	}
 }
