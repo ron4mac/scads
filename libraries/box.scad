@@ -315,10 +315,10 @@ module bx_cut (deep=0)
 }
 
 // ==================================== actions to add simple shapes to sides
-module bx_addLeft (thk=1, offs=0)
+module bx_addLeft (offs=0)
 {
-	y = offs ? offs : 0;
-	translate([0,y,0]) rotate([90,0,0]) linear_extrude(thk) children();
+	y = offs ? offs : bxv_thick+.01;
+	translate([0,y,0]) rotate([90,0,0]) linear_extrude(bxv_thick+.02) children();
 }
 module bx_addRight (offs=0)
 {
