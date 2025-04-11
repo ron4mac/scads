@@ -26,31 +26,35 @@ bxv_lid_height = 7.4;  // [1.2:.2:20]
 botrad = 2; //wallrad/2;
 toprad = 2; //wallrad/2;
 
+module wallRib (x,y) {
+	translate([x,y,0]) square([1.2, bxv_height - bxv_lid_height]);
+}
+
 module bx_hook_boxAdds ()
 {
     bx_addFront(bxv_thick*2)
     {
         xoff = bxv_depth/4;
-        translate([xoff,bxv_thick]) square([1.2,20]);
-        translate([bxv_depth-xoff,bxv_thick]) square([1.2,20]);
+        wallRib(xoff, bxv_thick);
+        wallRib(bxv_depth-xoff, bxv_thick);
     }
     bx_addBack(bxv_thick*2)
     {
         xoff = bxv_depth/4;
-        translate([xoff,bxv_thick]) square([1.2,20]);
-        translate([bxv_depth-xoff,bxv_thick]) square([1.2,20]);
+        wallRib(xoff, bxv_thick);
+        wallRib(bxv_depth-xoff, bxv_thick);
     }
     bx_addRight(bxv_thick*2)
     {
         xoff = bxv_width/4;
-        translate([xoff,bxv_thick]) square([1.2,20]);
-        translate([bxv_width-xoff,bxv_thick]) square([1.2,20]);
+        wallRib(xoff, bxv_thick);
+        wallRib(bxv_width-xoff, bxv_thick);
     }
     bx_addLeft(bxv_thick*2)
     {
         xoff = bxv_width/4;
-        translate([xoff,bxv_thick]) square([1.2,20]);
-        translate([bxv_width-xoff,bxv_thick]) square([1.2,20]);
+        wallRib(xoff, bxv_thick);
+        wallRib(bxv_width-xoff, bxv_thick);
     }
 }
 

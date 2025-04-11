@@ -10,7 +10,7 @@ bxv_lid_height = 8;
 bxv_lid_gap = 0;
 
 // the type of box to generate
-bxv_type = bxc_type_cover;
+bxv_type = 0;
 // box exterior edge radius
 bxv_radius = 3;
 
@@ -19,6 +19,7 @@ bxv_cols = 1;
 bxv_rows = 1;
 bxv_no_col_wall = [];
 bxv_no_row_wall = [];
+bxv_blocks = [];
 
 // show box parts
 bxv_show_box = true;
@@ -152,6 +153,12 @@ module bx_interior (width, depth, height, rad, bot, top)
 				}
 			}
 		}
+	}
+	// remove any multi-width blocks
+	for (blk = bxv_blocks) {
+		blkw = ox*blk[2]-st;
+		blkh = oy*blk[3]-st;
+		translate([ox*blk[0],oy*blk[1]]) allRoundedCube(blkw,blkh,height,rad,bot,top);
 	}
 }
 

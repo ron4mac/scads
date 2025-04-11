@@ -1,1 +1,1 @@
-$fn = $preview ? 8 : 36;
+$fn = $preview ? 15 : 60;
