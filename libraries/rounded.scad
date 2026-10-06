@@ -32,10 +32,10 @@ module roundedCube (width, depth, height, radius)
 
 module sphereRaft (w, d, r, bot=false)
 {
-	translate([0,0,bot?r:0]) difference() {
-		hull() utl_distRectangle(w,d,r,r,r) sphere(r);
-		translate([w/2,d/2,bot?r/2:-r/2]) cube([w,d,r], true);
-	}
+	translate([0,0,bot?r:0]) //difference() {
+		hull() utl_distRectangle(w-r,d-r,r,r,r) sphere(r);
+	//	translate([w/2,d/2,bot?r/2:-r/2]) cube([w,d,r], true);
+	//}
 }
 
 // create a cube rounded on its vertical corners and, optionally, its horizontal bottom and/or top edges
@@ -65,4 +65,20 @@ module allRoundedCube (width, depth, height, radius, botrad=0, toprad=0, noh=fal
 	} else {
 		translate([0,0,brad+(brad?-.01:0)]) linear_extrude(height-brad-trad+(trad?.01:0)) hull() rrect(width,depth,radius);
 	}
+}
+
+module allRoundedBox (width, depth, height, radius, cave=true)
+{
+	sphereRaft(width,depth,radius,true);
+	if (cave) difference() {
+		translate([radius*2,radius*2,radius]) cube([width-radius*2,depth-radius*2,radius*2]);
+		union() {
+			translate([radius*2,radius*2,radius*2]) sphereRaft(width-radius*4,depth-radius*4,radius,true);
+			translate([radius*2,radius*2,radius*3]) cube([width-radius*3,depth-radius*3,radius*3]);
+		}
+	}
+	translate([0,radius*2,0]) rotate([90,0,0]) sphereRaft(width,height,radius,true);
+	translate([radius*2,0,0]) rotate([0,-90,0]) sphereRaft(height,depth,radius,true);
+	translate([radius+width,0,0]) rotate([0,-90,0]) sphereRaft(height,depth,radius,true);
+	translate([0,radius+depth,0]) rotate([90,0,0]) sphereRaft(width,height,radius,true);
 }

@@ -5,32 +5,17 @@ module utl_mirror (axis)
 }
 
 // distribute objects (children) to 4 corners of a rectangle
-module utl_distRectangle (w, d, r, ox=0, oy=0, oz=0, rot=false)
+module utl_distRectangle (w, d, r, ox=0, oy=0, oz=0, rot=false, rm=2)
 {
-	translate([ox+(rot?0:r),oy+(rot?0:r),oz]) children();
+	translate([ox+r,oy+r,oz]) children();
 	if (rot) {
 		translate([w-r,oy,oz]) rotate([0,0,90]) children();
 		translate([w-r,d-r,oz]) rotate([0,0,180]) children();
 		translate([ox,d-r,oz]) rotate([0,0,270]) children();
 	} else {
-		translate([w-r,oy+r,oz]) children();
-		translate([w-r,d-r,oz]) children();
-		translate([ox+r,d-r,oz]) children();
-	}
-}
-
-// distribute objects (children) to 4 corners of a rectangle
-module utl__distRectangle (w, d, r, ox=0, oy=0, oz=0, rot=false, xyz=[0,0,0], centered=false)
-{
-	translate([rot?0:r,rot?0:r,oz]) children();
-	if (rot) {
-		translate([w-r,oy,oz]) rotate([0,0,90]) children();
-		translate([w-r,d-r,oz]) rotate([0,0,180]) children();
-		translate([ox,d-r,oz]) rotate([0,0,270]) children();
-	} else {
-		translate([w-ox-r,r,oz]) children();
-		translate([w-ox-r,d-oy-r,oz]) children();
-		translate([r,d-oy-r,oz]) children();
+		color("Red") translate([w-r*rm+ox,oy+r,oz]) children();
+		color("Green") translate([w-r*rm+ox,d-r*rm+oy,oz]) children();
+		color("Blue") translate([ox+r,d-r*rm+oy,oz]) children();
 	}
 }
 
@@ -59,11 +44,11 @@ module utl__distLinear (n=0, l=0, ow=0, v=[1,0,0])
 
 // distribute objects (children) in a linear fashion
 // number of iterations placed toward a vector point
-module utl_distLinear (n, v, vo=[0,0,0])
+module utl_distLinear (n, v)
 {
 	_n = n-1;
 	ox = v[0]/_n;
 	oy = v[1]/_n;
 	oz = v[2]/_n;
-	for (i =[0:1:_n]) translate([i*ox+vo[0],i*oy+vo[1],i*oz+vo[2]]) children();
+	for (i =[0:1:_n]) translate([i*ox,i*oy,i*oz]) children();
 }

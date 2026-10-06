@@ -9,38 +9,45 @@ _bxW = _bxIn ? width+_bxThk*2 : width;
 _bxD = _bxIn ? depth+_bxThk*2 : depth;
 _bxH = _bxIn ? height+_bxThk : height;
 _bxR = is_undef(rad) ? 1 : rad;
+_bxRin = is_undef(inrad) ? 0 : inrad;
 _bxColumns = is_undef(columns) ? 1 : columns;
 _bxRows = is_undef(rows) ? 1 : rows;
 _bxBlocks = is_undef(blocks) ? [] : blocks;
+_bxBox = is_undef(showbox) ? true : showbox;
+_bxLid = is_undef(showlid) ? true : showlid;
 
 
 echo(_bxColumns,_bxRows);
 
 module tshape (s,r)
 {
-	if (s) { sphere(r); }
-	else { cylinder(r*2,r,r,true);}
+	if (s) { #sphere(r); }
+	else { #cylinder(r*2,r,r,true);}
 }
 
 // create a cube object with rounding
-module _bxCube (W,D,R,b=false,t=false)
+module _bxCube (W,D,R=0,b=false,t=false,lid=false)
 {
-	let(r = R>0?R:.01, w = (W-r*2)/2, d = (D-r*2)/2, h = _bxH/2-r)
-	hull () {
-	//union () {
-		translate([w,d,h]) tshape(t,r);
-		translate([w,-d,h]) tshape(t,r);
-		translate([-w,d,h]) tshape(t,r);
-		translate([-w,-d,h]) tshape(t,r);
-		translate([w,d,-h]) tshape(b,r);
-		translate([w,-d,-h]) tshape(b,r);
-		translate([-w,d,-h]) tshape(b,r);
-		translate([-w,-d,-h]) tshape(b,r);
+//	let(r = R>0?R:.01, w = (W-r*2)/2, d = (D-r*2)/2, h = lid?lid:_bxH/2-r)
+	let(r = R, w = (W-r*2)/2, d = (D-r*2)/2, h = lid?lid:_bxH/2-r)
+	if (r>0) {
+		hull () {
+			translate([w,d,h]) tshape(t,r);
+			translate([w,-d,h]) tshape(t,r);
+			translate([-w,d,h]) tshape(t,r);
+			translate([-w,-d,h]) tshape(t,r);
+			translate([w,d,-h]) tshape(b,r);
+			translate([w,-d,-h]) tshape(b,r);
+			translate([-w,d,-h]) tshape(b,r);
+			translate([-w,-d,-h]) tshape(b,r);
+		}
+	} else {
+		#cube([w*2,d*2,h*2], true);
 	}
 }
 
 // build what will be carved from the interior
-module _bxInterior ()
+module _bxInterior (lid)
 {
 	//translate([0,0,_bxThk]) _bxCube(_bxW-_bxThk*2,_bxD-_bxThk*2,_bxR-_bxThk,false);
 	let(
@@ -57,7 +64,7 @@ module _bxInterior ()
 			for (cy = [ 0 : _bxRows - 1]) {
 				// normal cutout
 				translate([ox*cx-tox,oy*cy-toy,0])
-					_bxCube(dx,dy,_bxR-_bxThk);
+					_bxCube(dx,dy,max(0,_bxRin/*-_bxThk*/),lid=lid);
 			}
 		}
 		// remove any multi-width blocks
@@ -72,33 +79,61 @@ module _bxInterior ()
 }
 
 // create a box by removing an interior structure from a solid object
-module _cbx ()
+module __bx ()
 {
 	difference() {
 		union () {
 			_bxCube(_bxW,_bxD,_bxR,false);
 			bxHookBoxAdds();
 		}
-		translate([0,0,_bxThk])
-			_bxInterior();
+		translate([0,0,_bxThk]) _bxInterior();
 		bxHookBoxCuts();
+	}
+	bxHookBoxAfter();
+}
+
+module cbx (centered=true, lid)
+{
+	if (_bxBox) {
+		if (centered) {
+			__bx();
+		} else {
+			translate([_bxW/2,_bxD/2,_bxH/2]) __bx();
+		}
+	}
+	if (_bxLid && lid) {
+		if (centered) {
+			__lid(lid);
+		} else {
+			loc = _bxBox ? [_bxW/2,-_bxD/2-10,_bxThk/2] : [_bxW/2,_bxD/2,_bxThk/2];
+			translate(loc) __lid(lid);
+		}
 	}
 }
 
-module cbx (centered=true)
+// create a box lid by removing an interior structure from a solid object
+module __lid (lh)
 {
-	if (centered) {
-		_cbx();
-	} else {
-		translate([_bxW/2,_bxD/2,_bxH/2]) _cbx();
+	difference() {
+		color("Gold",.5) union () {
+			_bxCube(_bxW,_bxD,_bxR,false,lid=lh);
+			bxHookBoxAdds();
+		}
+		translate([0,0,_bxThk]) #_bxInterior(lid=lh*2);
+		bxHookBoxCuts();
 	}
+	bxHookBoxAfter();
 }
+
 
 // ==================================== hooks for cutouts and additions
 module bxHookBoxCuts ()
 {
 }
 module bxHookBoxAdds ()
+{
+}
+module bxHookBoxAfter ()
 {
 }
 module bxHookLidCuts ()
@@ -176,4 +211,7 @@ module bxAddFront (offs=0)
 	//x = offs ? offs : _bxThk+.01;
 	translate([_bxW/2-offs,0,0]) rotate([90,0,90]) linear_extrude(_bxThk+.02) children();
 }
-
+module bxAdd ()
+{
+	translate([0,0,0]) children();
+}

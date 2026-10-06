@@ -10,11 +10,9 @@ bxv_lid_height = 8;
 bxv_lid_gap = 0;
 
 // the type of box to generate
-bxv_type = 0;
+bxv_type = bxc_type_cover;
 // box exterior edge radius
 bxv_radius = 3;
-bxv_top_radius = 0;
-bxv_bottom_radius = 0;
 
 // box rows and columns
 bxv_cols = 1;
@@ -29,12 +27,12 @@ bxv_show_lid = true;
 
 // internal constants
 bxc_clr = .16;	// parts clearance
-bxc_pegH = 2;	// lid peg height
+bxc_pegH = 3;	// lid peg height
 bxc_pegT = 4;	// lid peg thickness
 bxc_bxColor = "BurlyWood";
 bxc_pegColor = "Coral";
 // lid cover/snap area
-bxc_ridgeH = 1;		//5;		// ridge space height
+bxc_ridgeH = 5;		// ridge space height
 bxc_snapVert = 2;	// lid snap vertical position
 bxc_snapColor = "White";
 // lid types
@@ -42,17 +40,14 @@ bxc_type_cover = 0;
 bxc_type_snap = 1;
 bxc_type_slide = 2;
 bxc_type_peg = 3;
-bxc_type_snapf = 4;
 
 
-module bx_generate (width=bxv_width, depth=bxv_depth, height=bxv_height, thick=bxv_thick, wallrad=bxv_radius, botrad=bxv_bottom_radius, toprad=bxv_top_radius, lid=bxv_lid_height, lidtype=bxv_type, gap=bxv_lid_gap, parms=[])
+module bx_generate (width=bxv_width, depth=bxv_depth, height=bxv_height, thick=bxv_thick, wallrad=bxv_radius, botrad=bxv_radius, toprad=bxv_radius, lid=bxv_lid_height, lidtype=bxv_type, gap=bxv_lid_gap)
 {
 	assert(wallrad==0 || lidtype!=bxc_type_slide, "Box must have zero radius for a slide-on lid");
 	assert(lid==0 || lidtype!=bxc_type_slide, "Box must have zero lid height for a slide-on lid");
 
-	$_BXD = [width,depth,height,thick];
-
-	if (bxv_show_box && parms[0]!=false) difference() {
+	if (bxv_show_box) difference() {
 		union() {
 			bx_box(width,depth,height-lid-gap,thick,wallrad,botrad,lid,lidtype,gap);
 			if (lidtype==bxc_type_snap) {
@@ -62,7 +57,7 @@ module bx_generate (width=bxv_width, depth=bxv_depth, height=bxv_height, thick=b
 		}
 		bx_hook_boxCuts();
 	}
-	if ((lid || lidtype==bxc_type_slide) && bxv_show_lid && parms[1]!=false) bx_placeLid(height) bx_lid(width,depth,height,thick,wallrad,botrad,toprad,lid,lidtype,gap);
+	if ((lid || lidtype==bxc_type_slide) && bxv_show_lid) bx_placeLid(height) bx_lid(width,depth,height,thick,wallrad,botrad,toprad,lid,lidtype,gap);
 }
 
 // hollowed out box shell
@@ -126,31 +121,8 @@ module bx_lid (w, d, h, t, r, br, tr, l, p, g=0)
 		color(bxc_pegColor) bx_placePegs(w,d,h-g,t,t,l) //#cube([2,2,bxc_pegH]);	//scube(w-t*2-bxc_clr*2,d-t*2-bxc_clr*2,t-bxc_clr,p);
 			linear_extrude(bxc_pegH) translate([bxc_clr,bxc_clr]) hull() {
 				translate([pgr,pgr]) circle(pgr);
-			//	polygon([[0,bxc_pegT],[bxc_pegT,bxc_pegT],[bxc_pegT,0]]);	//rectangular
-				polygon([[0,bxc_pegT],[pgr,pgr],[bxc_pegT,0]]);				//triangular
+				polygon([[0,bxc_pegT],[bxc_pegT,bxc_pegT],[bxc_pegT,0]]);
 			};
-	}
-	if (p==bxc_type_snapf) {
-		color(bxc_pegColor) bx_placePegs(w,d,h,t,t,l) translate([.1,2,-1]) bx_snapf(1,5,3);
-		color(bxc_pegColor) bx_placePegs(w,d,h,t,t,l) translate([2,.1,-1]) bx_snapf(5,1,3);
-	}
-}
-
-module bx_snapf (width, depth, height)
-{
-	cube([width,depth,height]);
-	if (width>depth) {
-		translate([0,.2,depth/2]) rotate([0,90,0]) cylinder(width,depth/2,depth/2);
-	} else {
-		translate([.2,depth,width/2]) rotate([90,0,0]) cylinder(depth,width/2,width/2);
-	}
-}
-module bx_snapfi (width, depth, height)
-{
-	if (width>depth) {
-		translate([-1,0,depth/2]) rotate([0,90,0]) cylinder(width+3,depth/2,depth/2);
-	} else {
-		translate([0,depth+2,width/2]) rotate([90,0,0]) cylinder(depth+3,width/2,width/2);
 	}
 }
 
@@ -187,12 +159,6 @@ module bx_interior (width, depth, height, rad, bot, top)
 		blkw = ox*blk[2]-st;
 		blkh = oy*blk[3]-st;
 		translate([ox*blk[0],oy*blk[1]]) allRoundedCube(blkw,blkh,height,rad,bot,top);
-	}
-	// indents for snapf
-	if (bxv_type==bxc_type_snapf) {
-		zah = -bxv_thick-2;
-		#bx_placePegs(width, depth, height, rad, bot, top) translate([.1,2,zah]) bx_snapfi(1,5,3);
-		#bx_placePegs(width, depth, height, rad, bot, top) translate([2,.1,zah]) bx_snapfi(5,1,3);
 	}
 }
 
@@ -299,45 +265,36 @@ module bx_placeLid (h)
 
 
 // ==================================== hooks for cutouts and additions
-module bx_hook_boxCuts (offs=0)
+module bx_hook_boxCuts ()
 {
-	translate([0,offs,0]) rotate([90,0,90]) bx_cutLeft();
-	translate([$_BXD.x-bxv_thick,offs,0]) rotate([90,0,90]) bx_cutRight();
-	//translate([offs,0,0]) rotate([0,0,0]) bx_addBack();
-	translate([offs,0,0]) rotate([90,0,0]) bx_cutFront();
-	bx_cutBottom();
 }
-module bx_hook_boxAdds (offs=0)
+module bx_hook_boxAdds ()
 {
-	translate([0,offs,0]) rotate([90,0,0]) bx_addLeft();
-	translate([$_BXD.x,$_BXD.y-offs,0]) bx_addRight();
-	translate([offs,0,0]) rotate([0,0,0]) bx_addBack();
-	translate([$_BXD.x-offs,0,0]) bx_addFront();
-	bx_addBottom();
 }
 module bx_hook_lidCuts ()
 {
-	translate([0,0,0]) bx_cutLidTop();
 }
 module bx_hook_lidAdds ()
 {
 }
 
 // ==================================== actions to cutout simple shapes from sides and top
-module bx_cutLeft (deep=0)
+module bx_cutLeft (deep=0, d3=false)
 {
 	if (deep==0) {
-		translate([0,$_BXD[3]+.1,0]) rotate([90,0,0]) linear_extrude($_BXD[3]+.2) children();
+		children();
 	} else {
-		translate([0,deep,0]) rotate([90,0,0]) linear_extrude($_BXD[3]) children();
+		y = deep ? deep : bxv_thick+.01;
+		translate([0,y,0]) rotate([90,0,0]) linear_extrude(bxv_thick+.02) children();
 	}
 }
 module bx_cutRight (deep=0)
 {
 	if (deep==0) {
-		translate([$_BXD.x,$_BXD.y-$_BXD[3]-.1,0]) rotate([90,0,180]) linear_extrude($_BXD[3]+.2) children();
+		translate([bxv_width,bxv_depth,0]) rotate([0,0,180]) children();
 	} else {
-		translate([$_BXD.x,$_BXD.y-deep,0]) rotate([90,0,180]) linear_extrude($_BXD[3]) children();
+		y = deep ? deep : bxv_thick+.01;
+		translate([bxv_width,bxv_depth-y,0]) rotate([90,0,180]) linear_extrude(bxv_thick+.02) children();
 	}
 }
 module bx_cutBack (deep=0)
@@ -363,35 +320,27 @@ module bx_cut (deep=0)
 	y = deep ? deep : bxv_thick+.01;
 	translate([0,0,bxv_lid_height-y]) linear_extrude(y) children();
 }
-module bx_cutBottomObj (deep=0)
-{
-	if (deep==0) {
-		translate([0,0,-.1]) children();
-	} else {
-		translate([0,0,deep]) children();
-	}
-}
 
 // ==================================== actions to add simple shapes to sides
 module bx_addLeft (offs=0)
 {
-	translate([0,offs,0]) rotate([90,0,0]) children();
+	y = offs ? offs : bxv_thick+.01;
+	translate([0,y,0]) rotate([90,0,0]) linear_extrude(bxv_thick+.02) children();
 }
 module bx_addRight (offs=0)
 {
-	translate([$_BXD.x,$_BXD.y-offs,0]) rotate([90,0,180]) children();
+	y = offs ? offs : bxv_thick+.01;
+	translate([bxv_width,bxv_depth-y,0]) rotate([90,0,180]) linear_extrude(bxv_thick+.02) children();
 }
 module bx_addBack (offs=0)
 {
-	translate([offs,0,0]) rotate([0,0,0]) children();
+	x = offs ? offs : bxv_thick+.01;
+	translate([x,bxv_depth,0]) rotate([90,0,-90]) linear_extrude(bxv_thick+.02) children();
 }
 module bx_addFront (offs=0)
 {
-	translate([$_BXD.x-offs,0,0]) /*rotate([0,0,180])*/ children();
-}
-module bx_addBottom (offs=0)
-{
-	translate([$_BXD.x-offs,0,0]) children();
+	x = offs ? offs : bxv_thick+.01;
+	translate([bxv_width-x,0,0]) rotate([90,0,90]) linear_extrude(bxv_thick+.02) children();
 }
 
 

@@ -29,7 +29,7 @@ Version="v3.1.0 (2024-04-04)";
 */
 
 // If set to true will generate the sample box at every save
-debug = true;
+debug = false;
 printMessages = debug;
 
 //---------------------------------------------------------
@@ -1519,7 +1519,7 @@ module minkowskiBox(shell, L, W, H, rad, plane, wall, preCutouts)
   //echo("minkowskiBox", shell=shell, L=L, W=W, H=H, rad=rad, plane=plane, wall=wall, preCutouts=preCutouts);
   iRad = getMinRad(rad, wall);
   cRad = (rad + iRad)/2;
-  
+
   //--------------------------------------------------------
   module minkowskiOuterBox(L, W, H, rad, plane, wall)
   {
@@ -1620,7 +1620,7 @@ module minkowskiBox(shell, L, W, H, rad, plane, wall, preCutouts)
         hookLidOutsidePre();
         minkowskiCutBox(L, W, H, cRad, plane, wall);
       } // difference()
-      
+
       //-- draw stuff inside the box
       //color("LightGreen")
       intersection()
